@@ -17,10 +17,25 @@ pub struct Args {
 
 pub fn parse(target_list: &TargetList) -> Args {
     let mut channel = None;
-    let mut target = None;
-    let mut target_dir = None;
-    let mut sc = None;
     let mut all: Vec<String> = Vec::new();
+    let mut sc = None;
+
+    let mut target = env::var("CARGO_BUILD_TARGET")
+        .map(|t| {
+            all.push(String::from("--target"));
+            all.push(t.to_owned());
+            Target::from(&t, target_list)
+
+        })
+        .ok();
+    let mut target_dir = env::var("CARGO_BUILD_TARGET_DIR")
+        .or_else(|_|env::var("CARGO_TARGET_DIR"))
+        .and_then(|td|{
+            all.push(String::from("--target-dir"));
+            all.push(td.to_owned());
+            Ok(PathBuf::from(&td))
+        })
+        .ok();
 
     {
         let mut args = env::args().skip(1);
